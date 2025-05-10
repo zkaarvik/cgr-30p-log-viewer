@@ -1,8 +1,15 @@
-<script>
-  function onSubmitLogfile() {
-    // save data into state
-    // nav to viewlog to display
-  }
+<script lang="ts">
+  import { goto } from "$app/navigation";
+
+  const onSubmitLogfile = async (event: Event) => {
+    const target = event?.target as HTMLInputElement;
+    const file = target.files?.[0];
+    const fileContents = await file?.text();
+
+    goto("/viewlog", {
+      state: { logdata: fileContents },
+    });
+  };
 </script>
 
 <label for="logfile"><b>Provide a log file</b></label>
