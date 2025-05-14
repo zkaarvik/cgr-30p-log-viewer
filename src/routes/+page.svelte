@@ -1,13 +1,13 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { fileStore } from "$lib/stores/fileStore";
 
   const onSubmitLogfile = async (event: Event) => {
     const target = event?.target as HTMLInputElement;
     const logfile = target.files?.[0];
 
-    goto("/viewlog", {
-      state: { logfile },
-    });
+    fileStore.set(logfile ?? null);
+    goto("/viewlog");
   };
 </script>
 

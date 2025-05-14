@@ -86,9 +86,11 @@ export const parseLogfile = async (
           "Data error: Number of headers doesn't equal number of data columns"
         );
       }
-      csvLine.forEach((datapoint, i) =>
-        parsedLogfile.datasets?.[i]?.data.push(datapoint)
-      );
+      csvLine.forEach((datapoint, i) => {
+        // TODO: Smart decode data depending on expected format. Fow now, assume everything is a number except first column
+        const parsedDatapoint = i === 0 ? datapoint : +datapoint; // Bad perf FIXME :(
+        parsedLogfile.datasets?.[i]?.data.push(parsedDatapoint);
+      });
     }
   }
 
