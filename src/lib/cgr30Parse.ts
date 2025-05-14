@@ -1,3 +1,6 @@
+const FIRST_LINE_VALIDATION = "Electronics International Inc";
+const CSV_HEADER_PREFIX = "TIME,";
+
 // Parse a CGR-30P log file. General Format as follows:
 /*
 Electronics International Inc
@@ -21,17 +24,6 @@ TIME, RPML, RPMR, RPM, MP, EGT1, EGT1;*F, EGT2;*F
 17:06:25, 2140, 2140, 2140, 22.5, 1354, 1292, 1375
 17:06:26, 2140, 2140, 2140, 22.5, 1354, 1292, 1375
 */
-
-const FIRST_LINE_VALIDATION = "Electronics International Inc";
-const CSV_HEADER_PREFIX = "TIME,";
-// const KNOWN_PREAMBLE_FIELDS = {
-//   "Aircraft ID": "ident",
-// };
-
-const KNOWN_PREAMBLE_FIELDS: Record<string, string> = {
-  ident: "Aircraft ID",
-} as const;
-
 export const parseLogfile = async (
   logfile: File
 ): Promise<ParsedLogfile | null> => {
