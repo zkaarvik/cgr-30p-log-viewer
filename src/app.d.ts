@@ -6,7 +6,7 @@ declare global {
     // interface Locals {}
     // interface PageData {}
     interface PageState {
-      logdata?: string;
+      logfile?: File;
     }
     // interface Platform {}
   }

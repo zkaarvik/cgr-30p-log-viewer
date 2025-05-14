@@ -3,11 +3,10 @@
 
   const onSubmitLogfile = async (event: Event) => {
     const target = event?.target as HTMLInputElement;
-    const file = target.files?.[0];
-    const fileContents = await file?.text();
+    const logfile = target.files?.[0];
 
     goto("/viewlog", {
-      state: { logdata: fileContents },
+      state: { logfile },
     });
   };
 </script>

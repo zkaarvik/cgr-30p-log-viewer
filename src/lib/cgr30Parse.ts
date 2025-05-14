@@ -1,0 +1,171 @@
+// Parse a CGR-30P log file. General Format as follows:
+/*
+Electronics International Inc
+CGR-30P Flight Data Recording
+Aircraft ID....: C-GABC
+
+Unit ID........: 1234566
+EDC Models.....: P-4-6-H,,
+SW Version.....: 1.2
+Tracking Number: 524
+Local Time: 2025/03/30 14:52:53 
+Zulu Time.: 2025/03/30 21:52:53 
+Flight Number: 101
+Engine Hours.: 345.00 hrs
+Tach Time....: 1200.50 hrs
+Data Logging Interval: 0.3 sec
+
+TIME, RPML, RPMR, RPM, MP, EGT1, EGT1;*F, EGT2;*F
+17:06:23, 2140, 2140, 2140, 22.5, 1354, 1292, 1375
+17:06:24, 2140, 2140, 2140, 22.5, 1354, 1292, 1375
+17:06:25, 2140, 2140, 2140, 22.5, 1354, 1292, 1375
+17:06:26, 2140, 2140, 2140, 22.5, 1354, 1292, 1375
+*/
+
+const FIRST_LINE_VALIDATION = "Electronics International Inc";
+const CSV_HEADER_PREFIX = "TIME,";
+// const KNOWN_PREAMBLE_FIELDS = {
+//   "Aircraft ID": "ident",
+// };
+
+const KNOWN_PREAMBLE_FIELDS: Record<string, string> = {
+  ident: "Aircraft ID",
+} as const;
+
+export const parseLogfile = async (
+  logfile: File
+): Promise<ParsedLogfile | null> => {
+  const parsedLogfile: ParsedLogfile = {};
+
+  // Validate.. Expect first line to read "Electronics International Inc"
+  let isValid = false;
+  let parsedPreamble = false;
+  let parsedDatasetHeaders = false;
+  for await (let line of logfileIterator(logfile)) {
+    //First, validate. The first line should be what we expecte, otherwise abort
+    if (!isValid) {
+      if (line === FIRST_LINE_VALIDATION) {
+        isValid = true;
+      } else {
+        // TODO: Handle error better than just returning null;
+        return null;
+      }
+    }
+
+    // Second, we expect some preamble data. Check for known fields. Stop when we reach CSV headers
+    if (line.indexOf(CSV_HEADER_PREFIX) === 0) {
+      parsedPreamble = true;
+    }
+
+    // Preamble
+    if (!parsedPreamble) {
+      const preambleLine = line.split(": ");
+      // If we don't have a key-value pair in a format we expect, just ignore the line
+      if (preambleLine.length === 2) {
+        // Remove trailing periods from field name
+        const preambleFieldName = preambleLine[0].replace(/\./g, "");
+        const preambleFieldValue = preambleLine[1];
+        setPreambleField(parsedLogfile, preambleFieldName, preambleFieldValue);
+      }
+      continue;
+    }
+
+    // CSV Data
+    let csvLine = line.split(",");
+    if (!parsedDatasetHeaders) {
+      // First line.. parse headers
+      parsedLogfile.datasets = [];
+      csvLine.forEach((header) =>
+        parsedLogfile.datasets?.push({ label: header, data: [] })
+      );
+      parsedDatasetHeaders = true;
+    } else {
+      // CSV Data, same order as headers
+      if (csvLine.length !== parsedLogfile.datasets?.length) {
+        console.error(
+          "Data error: Number of headers doesn't equal number of data columns"
+        );
+      }
+      csvLine.forEach((datapoint, i) =>
+        parsedLogfile.datasets?.[i]?.data.push(datapoint)
+      );
+    }
+  }
+
+  return parsedLogfile;
+};
+
+async function* logfileIterator(logfile: File) {
+  // Example from: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStreamDefaultReader
+  const utf8Decoder = new TextDecoder("utf-8");
+  const reader = logfile.stream().getReader();
+
+  let { value: chunk, done: readerDone } = await reader.read();
+  let decodedChunk = chunk ? utf8Decoder.decode(chunk, { stream: true }) : "";
+
+  const re = /\r\n|\n|\r/gm; //Regex to find line break
+  let startIndex = 0;
+
+  for (;;) {
+    let result = re.exec(decodedChunk);
+    if (!result) {
+      if (readerDone) {
+        break;
+      }
+      let remainder = decodedChunk.substring(startIndex);
+      ({ value: chunk, done: readerDone } = await reader.read());
+      decodedChunk =
+        remainder + (chunk ? utf8Decoder.decode(chunk, { stream: true }) : "");
+      startIndex = re.lastIndex = 0;
+      continue;
+    }
+    yield decodedChunk.substring(startIndex, result.index);
+    startIndex = re.lastIndex;
+  }
+  if (startIndex < decodedChunk.length) {
+    // last line didn't end in a newline char
+    yield decodedChunk.substring(startIndex);
+  }
+}
+
+const setPreambleField = (
+  parsedLogfile: ParsedLogfile,
+  preambleFieldName: string,
+  preambleFieldValue: string
+) => {
+  switch (preambleFieldName) {
+    case "Aircraft ID":
+      parsedLogfile.ident = preambleFieldValue;
+      return;
+    case "Unit ID":
+      parsedLogfile.unitId = preambleFieldValue;
+      return;
+    case "EDC Models":
+      parsedLogfile.edcModels = preambleFieldValue;
+      return;
+    case "SW Version":
+      parsedLogfile.softwareVersion = preambleFieldValue;
+      return;
+    case "Tracking Number":
+      parsedLogfile.trackingNumber = preambleFieldValue;
+      return;
+    case "Local Time":
+      parsedLogfile.localTime = preambleFieldValue;
+      return;
+    case "Zulu Time":
+      parsedLogfile.zuluTime = preambleFieldValue;
+      return;
+    case "Flight Number":
+      parsedLogfile.flightNumber = preambleFieldValue;
+      return;
+    case "Engine Hours":
+      parsedLogfile.engineHours = preambleFieldValue;
+      return;
+    case "Tach Time":
+      parsedLogfile.tachTime = preambleFieldValue;
+      return;
+    case "Data Logging Interval":
+      parsedLogfile.dataLoggingInterval = preambleFieldValue;
+      return;
+  }
+};
