@@ -3,6 +3,7 @@
   import { error } from "@sveltejs/kit";
   import { Chart } from "chart.js/auto";
   import zoomPlugin from "chartjs-plugin-zoom";
+  import "chartjs-adapter-spacetime";
   import type { PageProps } from "./$types";
 
   const { data }: PageProps = $props();
@@ -65,21 +66,22 @@
             },
             limits: {
               x: {
-                min: 0,
-                max: "original",
+                min: parsedLogfile.calculated.xMin,
+                max: parsedLogfile.calculated.xMax,
               },
             },
           },
         },
         scales: {
           x: {
-            type: "linear",
-            // ticks: {
-            //   source: "auto",
-            //   // Disabled rotation for performance
-            //   maxRotation: 0,
-            //   autoSkip: true,
-            // },
+            type: "time",
+            ticks: {
+              source: "auto",
+              // Disabled rotation for performance
+              maxRotation: 0,
+              autoSkip: true,
+              autoSkipPadding: 10,
+            },
           },
           y: {
             beginAtZero: true,

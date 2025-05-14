@@ -16,4 +16,9 @@ interface ParsedLogfile {
   tachTime?: string;
   dataLoggingInterval?: string;
   datasets?: Dataset[];
+  // Calculated properties not directly from logfile
+  calculated: {
+    xMin: number;
+    xMax: number;
+  };
 }

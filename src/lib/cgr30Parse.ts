@@ -35,14 +35,15 @@ const KNOWN_PREAMBLE_FIELDS: Record<string, string> = {
 export const parseLogfile = async (
   logfile: File
 ): Promise<ParsedLogfile | null> => {
-  const parsedLogfile: ParsedLogfile = {};
+  const parsedLogfile: ParsedLogfile = { calculated: { xMin: 0, xMax: 0 } };
 
   // Validate.. Expect first line to read "Electronics International Inc"
   let isValid = false;
   let parsedPreamble = false;
   let parsedDatasetHeaders = false;
   let xValue = 0;
-  let xValueIncrement = 1; // TODO: get from preamble
+  let xValueInitial = 0;
+  let xValueIncrement = 1;
   for await (let line of logfileIterator(logfile)) {
     //First, validate. The first line should be what we expecte, otherwise abort
     if (!isValid) {
@@ -50,6 +51,7 @@ export const parseLogfile = async (
         isValid = true;
       } else {
         // TODO: Handle error better than just returning null;
+        console.error("Parsing failed. Invalid file.");
         return null;
       }
     }
@@ -72,6 +74,14 @@ export const parseLogfile = async (
       continue;
     }
 
+    // Set up starting time point. Measure in unix timestamps
+    if (parsedPreamble && !parsedDatasetHeaders) {
+      xValue = new Date(`${parsedLogfile.zuluTime ?? 0}Z`).getTime();
+      xValueInitial = xValue;
+      xValueIncrement =
+        1000 * parseFloat(parsedLogfile.dataLoggingInterval ?? "1");
+    }
+
     // CSV Data
     let csvLine = line.split(",");
     if (!parsedDatasetHeaders) {
@@ -91,17 +101,18 @@ export const parseLogfile = async (
 
       csvLine.forEach((datapoint, i) => {
         // TODO: Smart decode data depending on expected format. Fow now, assume everything is a number except first column
-        if (i === 0) {
-          // ignore right now
-        } else {
-          // TODO: Proper x axis reflecting time
-          // TODO: Better perf for converting string to num
-          parsedLogfile.datasets?.[i]?.data.push({ x: xValue, y: +datapoint });
-        }
+        // TODO: Better perf for converting string to num
+        parsedLogfile.datasets?.[i]?.data.push({ x: xValue, y: +datapoint });
       });
       xValue += xValueIncrement;
     }
   }
+
+  //Calculated properties
+  parsedLogfile.calculated = {
+    xMin: xValueInitial,
+    xMax: xValue,
+  };
 
   return parsedLogfile;
 };

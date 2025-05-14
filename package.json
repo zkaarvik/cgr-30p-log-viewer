@@ -23,7 +23,9 @@
 	},
 	"dependencies": {
 		"chart.js": "^4.4.9",
+		"chartjs-adapter-spacetime": "^1.0.1",
 		"chartjs-plugin-zoom": "^2.2.0",
-		"eslint": "^9.26.0"
+		"eslint": "^9.26.0",
+		"spacetime": "^7.10.0"
 	}
 }
