@@ -1,9 +1,8 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { page } from "$app/state";
-  import { parseLogfile } from "$lib/cgr30Parse";
   import { error } from "@sveltejs/kit";
   import { Chart } from "chart.js/auto";
+  import zoomPlugin from "chartjs-plugin-zoom";
   import type { PageProps } from "./$types";
 
   const { data }: PageProps = $props();
@@ -18,6 +17,7 @@
   // LATER: Prepare chart lib and with only used
   // remove /auto from import and set it up here
   // Chart.register(BarController, BarElement, LineController, LineElement, PointElement, LinearScale, Tooltip);
+  Chart.register(zoomPlugin);
 
   // Update the chart in an effect, so we can get the canvas context
   $effect(() => {
@@ -30,10 +30,38 @@
         normalized: true,
         parsing: false,
         animation: false,
+        datasets: {
+          line: {
+            pointStyle: false,
+          },
+        },
+        elements: {
+          line: {
+            tension: 0.1,
+          },
+        },
         plugins: {
           decimation: {
             enabled: true,
-            // algorithm: "lttb",
+          },
+          zoom: {
+            pan: {
+              enabled: true,
+              mode: "x",
+            },
+            zoom: {
+              wheel: {
+                enabled: true,
+              },
+              pinch: {
+                enabled: true,
+              },
+              drag: {
+                enabled: true,
+                modifierKey: "shift",
+              },
+              mode: "x",
+            },
           },
         },
         scales: {
