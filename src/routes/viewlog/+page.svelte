@@ -7,13 +7,14 @@
   import type { PageProps } from "./$types";
   import LogChart from "./LogChart.svelte";
   import { sortLogGroups } from "$lib/cgr30Parse";
+  import { base } from "$app/paths";
 
   const { data }: PageProps = $props();
   const parsedLogfile = data.parsedLogfile;
 
   if (!parsedLogfile) {
     // For now just go back to home
-    goto("/");
+    goto(`${base}/`);
     error(404, "No file provided");
   }
 
