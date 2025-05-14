@@ -68,7 +68,9 @@ export const parseLogfile = async (
 
     // Set up starting time point. Measure in unix timestamps
     if (parsedPreamble && !parsedDatasetHeaders) {
-      xValue = new Date(`${parsedLogfile.zuluTime ?? 0}Z`).getTime();
+      // Date is formatted as "2025/03/30 21:52:53 ", parse into something accepted by all browsers
+      const formattedDate = parsedLogfile.zuluTime?.replaceAll("/", "-").trim();
+      xValue = new Date(`${formattedDate ?? 0}Z`).getTime();
       xValueInitial = xValue;
       xValueIncrement =
         1000 * parseFloat(parsedLogfile.dataLoggingInterval ?? "1");
