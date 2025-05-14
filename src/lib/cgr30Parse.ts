@@ -223,7 +223,7 @@ export const sortLogGroups = (parsedLogfile: ParsedLogfile): LogGroups => {
     },
     fuelLevels: {
       datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 20 } },
+      limits: { x: xLimits, y: { min: 0, max: 25 } },
     },
   };
 
