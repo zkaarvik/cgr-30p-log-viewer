@@ -26,6 +26,8 @@
   const sortedLogGroups = sortLogGroups(parsedLogfile);
 </script>
 
+Scroll to zoom, or shift+drag to select timespan
+
 <LogChart chartId="rpm" label="RPM" logGroup={sortedLogGroups.rpm} />
 <LogChart
   chartId="fuelFlow"
