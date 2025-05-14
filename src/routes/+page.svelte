@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
   import { fileStore } from "$lib/stores/fileStore";
 
   const onSubmitLogfile = async (event: Event) => {
@@ -7,7 +8,7 @@
     const logfile = target.files?.[0];
 
     fileStore.set(logfile ?? null);
-    goto("/viewlog");
+    goto(`${base}/viewlog`);
   };
 </script>
 
