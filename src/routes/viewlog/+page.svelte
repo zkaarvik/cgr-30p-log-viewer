@@ -26,7 +26,59 @@
   const sortedLogGroups = sortLogGroups(parsedLogfile);
 </script>
 
-Scroll to zoom, or shift+drag to select timespan
+<details>
+  <summary style:width="100%">File Details</summary>
+  <table>
+    <tbody>
+      <tr>
+        <td>Ident</td>
+        <td>{parsedLogfile.ident}</td>
+      </tr>
+      <tr>
+        <td>Unit ID</td>
+        <td>{parsedLogfile.unitId}</td>
+      </tr>
+      <tr>
+        <td>EDC Models</td>
+        <td>{parsedLogfile.edcModels}</td>
+      </tr>
+      <tr>
+        <td>Software Version</td>
+        <td>{parsedLogfile.softwareVersion}</td>
+      </tr>
+      <tr>
+        <td>Tracking Number</td>
+        <td>{parsedLogfile.trackingNumber}</td>
+      </tr>
+      <tr>
+        <td>Local Time</td>
+        <td>{parsedLogfile.localTime}</td>
+      </tr>
+      <tr>
+        <td>Zulu Time</td>
+        <td>{parsedLogfile.zuluTime}</td>
+      </tr>
+      <tr>
+        <td>Flight Number</td>
+        <td>{parsedLogfile.flightNumber}</td>
+      </tr>
+      <tr>
+        <td>Engine Hours</td>
+        <td>{parsedLogfile.engineHours}</td>
+      </tr>
+      <tr>
+        <td>Tach Time</td>
+        <td>{parsedLogfile.tachTime}</td>
+      </tr>
+      <tr>
+        <td>Data Logging Interval</td>
+        <td>{parsedLogfile.dataLoggingInterval}</td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+<small>Scroll/pinch to zoom, or shift+drag to select timespan</small>
 
 <LogChart chartId="rpm" label="RPM" logGroup={sortedLogGroups.rpm} />
 <LogChart
