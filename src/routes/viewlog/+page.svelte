@@ -28,24 +28,24 @@
       type: "line",
       options: {
         normalized: true,
-        // parsing: false,
+        parsing: false,
         animation: false,
-        // plugins: {
-        //   decimation: {
-        //     enabled: true,
-        //     // algorithm: "lttb",
-        //   },
-        // },
+        plugins: {
+          decimation: {
+            enabled: true,
+            // algorithm: "lttb",
+          },
+        },
         scales: {
-          // x: {
-          //   type: "linear",
-          //   // ticks: {
-          //   //   source: "auto",
-          //   //   // Disabled rotation for performance
-          //   //   maxRotation: 0,
-          //   //   autoSkip: true,
-          //   // },
-          // },
+          x: {
+            type: "linear",
+            // ticks: {
+            //   source: "auto",
+            //   // Disabled rotation for performance
+            //   maxRotation: 0,
+            //   autoSkip: true,
+            // },
+          },
           y: {
             beginAtZero: true,
           },
@@ -53,8 +53,7 @@
       },
 
       data: {
-        labels: parsedLogfile.datasets[0].data, // First row is 'TIME'
-        datasets: parsedLogfile.datasets.slice(1, 4),
+        datasets: parsedLogfile.datasets.slice(2, 5),
       },
     });
   });

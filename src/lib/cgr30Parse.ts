@@ -41,6 +41,8 @@ export const parseLogfile = async (
   let isValid = false;
   let parsedPreamble = false;
   let parsedDatasetHeaders = false;
+  let xValue = 0;
+  let xValueIncrement = 1; // TODO: get from preamble
   for await (let line of logfileIterator(logfile)) {
     //First, validate. The first line should be what we expecte, otherwise abort
     if (!isValid) {
@@ -86,11 +88,18 @@ export const parseLogfile = async (
           "Data error: Number of headers doesn't equal number of data columns"
         );
       }
+
       csvLine.forEach((datapoint, i) => {
         // TODO: Smart decode data depending on expected format. Fow now, assume everything is a number except first column
-        const parsedDatapoint = i === 0 ? datapoint : +datapoint; // Bad perf FIXME :(
-        parsedLogfile.datasets?.[i]?.data.push(parsedDatapoint);
+        if (i === 0) {
+          // ignore right now
+        } else {
+          // TODO: Proper x axis reflecting time
+          // TODO: Better perf for converting string to num
+          parsedLogfile.datasets?.[i]?.data.push({ x: xValue, y: +datapoint });
+        }
       });
+      xValue += xValueIncrement;
     }
   }
 

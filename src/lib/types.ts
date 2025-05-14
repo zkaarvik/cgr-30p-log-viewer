@@ -1,6 +1,6 @@
 interface Dataset {
   label: string;
-  data: (string | number)[];
+  data: { x: number; y: number }[];
 }
 
 interface ParsedLogfile {
