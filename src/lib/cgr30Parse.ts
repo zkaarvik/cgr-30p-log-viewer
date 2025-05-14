@@ -183,3 +183,87 @@ const setPreambleField = (
       return;
   }
 };
+
+export const sortLogGroups = (parsedLogfile: ParsedLogfile): LogGroups => {
+  const xLimits = {
+    min: parsedLogfile.calculated.xMin,
+    max: parsedLogfile.calculated.xMax,
+  };
+
+  // y min/max values should be suggested min/max for the charts. Based on reasonable assumptions for now
+  // x min/max values should be calculated time bounds for zooming in/out.
+  const logGroups: LogGroups = {
+    rpm: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 3000 } },
+    },
+    fuelFlow: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 20 } },
+    },
+    egt: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 2000 } },
+    },
+    cht: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 1000 } },
+    },
+    oilTemp: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 300 } },
+    },
+    oilPressure: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 150 } },
+    },
+    electrical: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 15 } },
+    },
+    fuelLevels: {
+      datasets: [],
+      limits: { x: xLimits, y: { min: 0, max: 20 } },
+    },
+  };
+
+  parsedLogfile.datasets?.forEach((dataset) => {
+    switch (dataset.label) {
+      case "RPMLEFT;RPM":
+      case "RPMRIGHT;RPM":
+        logGroups.rpm.datasets.push(dataset);
+        break;
+      case "FLOW;GPH":
+        logGroups.fuelFlow.datasets.push(dataset);
+        break;
+      case "EGT1;*F":
+      case "EGT2;*F":
+      case "EGT3;*F":
+      case "EGT4;*F":
+        logGroups.egt.datasets.push(dataset);
+        break;
+      case "CHT1;*F":
+      case "CHT2;*F":
+      case "CHT3;*F":
+      case "CHT4;*F":
+        logGroups.cht.datasets.push(dataset);
+        break;
+      case "OIL T;*F":
+        logGroups.oilTemp.datasets.push(dataset);
+        break;
+      case "OIL P;PSI":
+        logGroups.oilPressure.datasets.push(dataset);
+        break;
+      case "VOLTS;V":
+      case "AMPS;A":
+        logGroups.electrical.datasets.push(dataset);
+        break;
+      case "FUEL L;GAL":
+      case "FUEL R;GAL":
+        logGroups.fuelLevels.datasets.push(dataset);
+        break;
+    }
+  });
+
+  return logGroups;
+};

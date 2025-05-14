@@ -22,3 +22,28 @@ interface ParsedLogfile {
     xMax: number;
   };
 }
+
+interface LogGroups {
+  rpm: LogGroup;
+  fuelFlow: LogGroup;
+  egt: LogGroup;
+  cht: LogGroup;
+  oilTemp: LogGroup;
+  oilPressure: LogGroup;
+  electrical: LogGroup;
+  fuelLevels: LogGroup;
+}
+
+interface LogGroup {
+  datasets: Dataset[];
+  limits?: {
+    x: {
+      min: number;
+      max: number;
+    };
+    y?: {
+      min: number;
+      max: number;
+    };
+  };
+}

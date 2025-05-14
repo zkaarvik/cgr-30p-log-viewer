@@ -5,6 +5,8 @@
   import zoomPlugin from "chartjs-plugin-zoom";
   import "chartjs-adapter-spacetime";
   import type { PageProps } from "./$types";
+  import LogChart from "./LogChart.svelte";
+  import { sortLogGroups } from "$lib/cgr30Parse";
 
   const { data }: PageProps = $props();
   const parsedLogfile = data.parsedLogfile;
@@ -20,81 +22,42 @@
   // Chart.register(BarController, BarElement, LineController, LineElement, PointElement, LinearScale, Tooltip);
   Chart.register(zoomPlugin);
 
-  // Update the chart in an effect, so we can get the canvas context
-  $effect(() => {
-    const ctx = document.getElementById("logchart") as HTMLCanvasElement;
-    if (!ctx || !parsedLogfile || !parsedLogfile?.datasets?.length) return;
-
-    new Chart(ctx, {
-      type: "line",
-      options: {
-        normalized: true,
-        parsing: false,
-        animation: false,
-        datasets: {
-          line: {
-            pointStyle: false,
-          },
-        },
-        elements: {
-          line: {
-            tension: 0.1,
-            borderWidth: 1.5,
-          },
-        },
-        plugins: {
-          decimation: {
-            enabled: true,
-          },
-          zoom: {
-            pan: {
-              enabled: true,
-              mode: "x",
-            },
-            zoom: {
-              wheel: {
-                enabled: true,
-              },
-              pinch: {
-                enabled: true,
-              },
-              drag: {
-                enabled: true,
-                modifierKey: "shift",
-              },
-              mode: "x",
-            },
-            limits: {
-              x: {
-                min: parsedLogfile.calculated.xMin,
-                max: parsedLogfile.calculated.xMax,
-              },
-            },
-          },
-        },
-        scales: {
-          x: {
-            type: "time",
-            ticks: {
-              source: "auto",
-              // Disabled rotation for performance
-              maxRotation: 0,
-              autoSkip: true,
-              autoSkipPadding: 10,
-            },
-          },
-          y: {
-            beginAtZero: true,
-          },
-        },
-      },
-      data: {
-        datasets: parsedLogfile.datasets.slice(2, 5),
-      },
-    });
-  });
+  const sortedLogGroups = sortLogGroups(parsedLogfile);
 </script>
 
-<div>
-  <canvas id="logchart"></canvas>
-</div>
+<LogChart chartId="rpm" label="RPM" logGroup={sortedLogGroups.rpm} />
+<LogChart
+  chartId="fuelFlow"
+  label="Fuel Flow"
+  logGroup={sortedLogGroups.fuelFlow}
+/>
+<LogChart
+  chartId="egt"
+  label="Exhaust Gas Temperature (EGT)"
+  logGroup={sortedLogGroups.egt}
+/>
+<LogChart
+  chartId="cht"
+  label="Cylinder Head Temperature (CHT)"
+  logGroup={sortedLogGroups.cht}
+/>
+<LogChart
+  chartId="oilTemp"
+  label="Oil Temperature"
+  logGroup={sortedLogGroups.oilTemp}
+/>
+<LogChart
+  chartId="oilPressure"
+  label="Oil Pressure"
+  logGroup={sortedLogGroups.oilPressure}
+/>
+<LogChart
+  chartId="electrical"
+  label="Electrical System"
+  logGroup={sortedLogGroups.electrical}
+/>
+<LogChart
+  chartId="fuelLevels"
+  label="Fuel Levels"
+  logGroup={sortedLogGroups.fuelLevels}
+/>
