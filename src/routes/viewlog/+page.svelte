@@ -38,6 +38,7 @@
         elements: {
           line: {
             tension: 0.1,
+            borderWidth: 1.5,
           },
         },
         plugins: {
@@ -62,6 +63,12 @@
               },
               mode: "x",
             },
+            limits: {
+              x: {
+                min: 0,
+                max: "original",
+              },
+            },
           },
         },
         scales: {
@@ -79,7 +86,6 @@
           },
         },
       },
-
       data: {
         datasets: parsedLogfile.datasets.slice(2, 5),
       },
