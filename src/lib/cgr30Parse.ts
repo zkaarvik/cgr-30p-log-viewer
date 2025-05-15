@@ -35,7 +35,9 @@ TIME, RPML, RPMR, RPM, MP, EGT1, EGT1;*F, EGT2;*F
 export const parseLogfile = async (
   logfile: File
 ): Promise<ParsedLogfile | null> => {
-  const parsedLogfile: ParsedLogfile = { calculated: { xMin: 0, xMax: 0 } };
+  const parsedLogfile: ParsedLogfile = {
+    calculated: { limits: { x: { min: 0, max: 0 } } },
+  };
 
   // Validate.. Expect first line to read "Electronics International Inc"
   let isValid = false;
