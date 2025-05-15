@@ -1,8 +1,5 @@
-export interface Dataset {
-  label: string;
-  data: { x: number; y: number }[];
-}
-
+// ADDING NEW PREAMBLE FIELDS:
+// Add a field to LogFilePreambleFields, and the mapping to the log file string to KnownPreambleFields
 export interface LogFilePreambleFields {
   ident?: string;
   unitId?: string;
@@ -34,19 +31,9 @@ export const KnownPreambleFields: {
   "Data Logging Interval": "dataLoggingInterval",
 };
 
-export interface ParsedLogfile extends LogFilePreambleFields {
-  datasets?: Dataset[];
-  // Calculated properties not directly from logfile
-  calculated: {
-    limits: {
-      x: {
-        min: number;
-        max: number;
-      };
-    };
-  };
-}
-
+// ADDING NEW LOG GROUPS:
+// Define the new group in LogGroups, and the associated chart partameters in LogGroupInfo
+// Each group corresponds to one chart
 // Groups will be displayed in the order defined here
 export enum LogGroups {
   rpm = "rpm",
@@ -60,18 +47,16 @@ export enum LogGroups {
   otherTemps = "otherTemps",
 }
 
-export interface LogGroup {
-  group: LogGroups;
-  datasets: Dataset[];
-}
-
 export const LogGroupInfo: {
   [key in LogGroups]: {
     title: string;
     limits: { y: { min: number; max: number } };
   };
 } = {
-  [LogGroups.rpm]: { title: "RPM", limits: { y: { min: 0, max: 3000 } } },
+  [LogGroups.rpm]: {
+    title: "RPM",
+    limits: { y: { min: 0, max: 3000 } },
+  },
   [LogGroups.fuelFlow]: {
     title: "Fuel Flow",
     limits: { y: { min: 0, max: 20 } },
@@ -106,6 +91,8 @@ export const LogGroupInfo: {
   },
 };
 
+// ADDING NEW LOGGED COLUMNS:
+// Add new logged parameters we want to display here. Each of these should correspond to a column in the CSV
 export const KnownLogTypes: {
   [key: string]: { prettyLabel: string; group: LogGroups };
 } = {
@@ -153,3 +140,27 @@ export const KnownLogTypes: {
     group: LogGroups.otherTemps,
   },
 };
+
+// OTHER TYPES
+export interface Dataset {
+  label: string;
+  data: { x: number; y: number }[];
+}
+
+export interface ParsedLogfile extends LogFilePreambleFields {
+  datasets?: Dataset[];
+  // Calculated properties not directly from logfile
+  calculated: {
+    limits: {
+      x: {
+        min: number;
+        max: number;
+      };
+    };
+  };
+}
+
+export interface LogGroup {
+  group: LogGroups;
+  datasets: Dataset[];
+}
