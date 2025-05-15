@@ -1,3 +1,11 @@
+import {
+  KnownLogTypes,
+  KnownPreambleFields,
+  LogGroups,
+  type LogGroup,
+  type ParsedLogfile,
+} from "./types";
+
 const FIRST_LINE_VALIDATION = "Electronics International Inc";
 const CSV_HEADER_PREFIX = "TIME,";
 
@@ -59,9 +67,12 @@ export const parseLogfile = async (
       // If we don't have a key-value pair in a format we expect, just ignore the line
       if (preambleLine.length === 2) {
         // Remove trailing periods from field name
-        const preambleFieldName = preambleLine[0].replace(/\./g, "");
-        const preambleFieldValue = preambleLine[1];
-        setPreambleField(parsedLogfile, preambleFieldName, preambleFieldValue);
+        const name = preambleLine[0].replace(/\./g, "");
+        const value = preambleLine[1];
+
+        if (KnownPreambleFields[name]) {
+          parsedLogfile[KnownPreambleFields[name]] = value;
+        }
       }
       continue;
     }
@@ -104,8 +115,12 @@ export const parseLogfile = async (
 
   //Calculated properties
   parsedLogfile.calculated = {
-    xMin: xValueInitial,
-    xMax: xValue,
+    limits: {
+      x: {
+        min: xValueInitial,
+        max: xValue,
+      },
+    },
   };
 
   return parsedLogfile;
@@ -144,128 +159,19 @@ async function* logfileIterator(logfile: File) {
   }
 }
 
-const setPreambleField = (
-  parsedLogfile: ParsedLogfile,
-  preambleFieldName: string,
-  preambleFieldValue: string
-) => {
-  switch (preambleFieldName) {
-    case "Aircraft ID":
-      parsedLogfile.ident = preambleFieldValue;
-      return;
-    case "Unit ID":
-      parsedLogfile.unitId = preambleFieldValue;
-      return;
-    case "EDC Models":
-      parsedLogfile.edcModels = preambleFieldValue;
-      return;
-    case "SW Version":
-      parsedLogfile.softwareVersion = preambleFieldValue;
-      return;
-    case "Tracking Number":
-      parsedLogfile.trackingNumber = preambleFieldValue;
-      return;
-    case "Local Time":
-      parsedLogfile.localTime = preambleFieldValue;
-      return;
-    case "Zulu Time":
-      parsedLogfile.zuluTime = preambleFieldValue;
-      return;
-    case "Flight Number":
-      parsedLogfile.flightNumber = preambleFieldValue;
-      return;
-    case "Engine Hours":
-      parsedLogfile.engineHours = preambleFieldValue;
-      return;
-    case "Tach Time":
-      parsedLogfile.tachTime = preambleFieldValue;
-      return;
-    case "Data Logging Interval":
-      parsedLogfile.dataLoggingInterval = preambleFieldValue;
-      return;
-  }
-};
+// Arrange parsed log groups into an expected order
+export const sortLogGroups = (parsedLogfile: ParsedLogfile): LogGroup[] => {
+  const sortedLogGroups: LogGroup[] = [];
 
-export const sortLogGroups = (parsedLogfile: ParsedLogfile): LogGroups => {
-  const xLimits = {
-    min: parsedLogfile.calculated.xMin,
-    max: parsedLogfile.calculated.xMax,
-  };
+  Object.values(LogGroups).forEach((group) => {
+    const datasets = parsedLogfile.datasets?.filter(
+      (dataset) => KnownLogTypes[dataset.label]?.group === group
+    );
 
-  // y min/max values should be suggested min/max for the charts. Based on reasonable assumptions for now
-  // x min/max values should be calculated time bounds for zooming in/out.
-  const logGroups: LogGroups = {
-    rpm: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 3000 } },
-    },
-    fuelFlow: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 20 } },
-    },
-    egt: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 2000 } },
-    },
-    cht: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 1000 } },
-    },
-    oilTemp: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 300 } },
-    },
-    oilPressure: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 150 } },
-    },
-    electrical: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 15 } },
-    },
-    fuelLevels: {
-      datasets: [],
-      limits: { x: xLimits, y: { min: 0, max: 25 } },
-    },
-  };
-
-  parsedLogfile.datasets?.forEach((dataset) => {
-    switch (dataset.label) {
-      case "RPMLEFT;RPM":
-      case "RPMRIGHT;RPM":
-        logGroups.rpm.datasets.push(dataset);
-        break;
-      case "FLOW;GPH":
-        logGroups.fuelFlow.datasets.push(dataset);
-        break;
-      case "EGT1;*F":
-      case "EGT2;*F":
-      case "EGT3;*F":
-      case "EGT4;*F":
-        logGroups.egt.datasets.push(dataset);
-        break;
-      case "CHT1;*F":
-      case "CHT2;*F":
-      case "CHT3;*F":
-      case "CHT4;*F":
-        logGroups.cht.datasets.push(dataset);
-        break;
-      case "OIL T;*F":
-        logGroups.oilTemp.datasets.push(dataset);
-        break;
-      case "OIL P;PSI":
-        logGroups.oilPressure.datasets.push(dataset);
-        break;
-      case "VOLTS;V":
-      case "AMPS;A":
-        logGroups.electrical.datasets.push(dataset);
-        break;
-      case "FUEL L;GAL":
-      case "FUEL R;GAL":
-        logGroups.fuelLevels.datasets.push(dataset);
-        break;
+    if (datasets) {
+      sortedLogGroups.push({ group: LogGroups[group], datasets });
     }
   });
 
-  return logGroups;
+  return sortedLogGroups;
 };

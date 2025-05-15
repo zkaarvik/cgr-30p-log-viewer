@@ -1,13 +1,18 @@
 <script lang="ts">
+  import { KnownLogTypes, LogGroupInfo, type LogGroup } from "$lib/types";
   import { Chart } from "chart.js";
 
   interface Props {
-    chartId: string;
-    label: string;
     logGroup: LogGroup;
+    xLimits: { min: number; max: number };
   }
 
-  let { chartId, label, logGroup }: Props = $props();
+  let { logGroup, xLimits }: Props = $props();
+  const chartId = logGroup.group;
+  const prettyLabelDatasets = logGroup.datasets.map((dataset) => ({
+    label: KnownLogTypes[dataset.label]?.prettyLabel ?? dataset.label,
+    data: dataset.data,
+  }));
 
   // Update the chart in an effect, so we can get the canvas context
   $effect(() => {
@@ -54,7 +59,7 @@
               mode: "x",
             },
             limits: {
-              x: logGroup.limits?.x,
+              x: xLimits,
             },
           },
         },
@@ -71,19 +76,19 @@
           },
           y: {
             beginAtZero: true,
-            suggestedMin: logGroup.limits?.y?.min,
-            suggestedMax: logGroup.limits?.y?.max,
+            suggestedMin: LogGroupInfo[logGroup.group].limits.y.min,
+            suggestedMax: LogGroupInfo[logGroup.group].limits.y.max,
           },
         },
       },
       data: {
-        datasets: logGroup.datasets,
+        datasets: prettyLabelDatasets,
       },
     });
   });
 </script>
 
 <div>
-  <h3>{label}</h3>
+  <h3>{LogGroupInfo[logGroup.group].title}</h3>
   <canvas id={chartId}></canvas>
 </div>

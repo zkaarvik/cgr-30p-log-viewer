@@ -8,6 +8,7 @@
   import LogChart from "./LogChart.svelte";
   import { sortLogGroups } from "$lib/cgr30Parse";
   import { base } from "$app/paths";
+  import { KnownPreambleFields } from "$lib/types";
 
   const { data }: PageProps = $props();
   const parsedLogfile = data.parsedLogfile;
@@ -30,89 +31,23 @@
   <summary style:width="100%">File Details</summary>
   <table>
     <tbody>
-      <tr>
-        <td>Ident</td>
-        <td>{parsedLogfile.ident}</td>
-      </tr>
-      <tr>
-        <td>Unit ID</td>
-        <td>{parsedLogfile.unitId}</td>
-      </tr>
-      <tr>
-        <td>EDC Models</td>
-        <td>{parsedLogfile.edcModels}</td>
-      </tr>
-      <tr>
-        <td>Software Version</td>
-        <td>{parsedLogfile.softwareVersion}</td>
-      </tr>
-      <tr>
-        <td>Tracking Number</td>
-        <td>{parsedLogfile.trackingNumber}</td>
-      </tr>
-      <tr>
-        <td>Local Time</td>
-        <td>{parsedLogfile.localTime}</td>
-      </tr>
-      <tr>
-        <td>Zulu Time</td>
-        <td>{parsedLogfile.zuluTime}</td>
-      </tr>
-      <tr>
-        <td>Flight Number</td>
-        <td>{parsedLogfile.flightNumber}</td>
-      </tr>
-      <tr>
-        <td>Engine Hours</td>
-        <td>{parsedLogfile.engineHours}</td>
-      </tr>
-      <tr>
-        <td>Tach Time</td>
-        <td>{parsedLogfile.tachTime}</td>
-      </tr>
-      <tr>
-        <td>Data Logging Interval</td>
-        <td>{parsedLogfile.dataLoggingInterval}</td>
-      </tr>
+      {#each Object.entries(KnownPreambleFields) as [fieldPrettyName, fieldProperty]}
+        {#if !!parsedLogfile[fieldProperty]}
+          <tr>
+            <td>{fieldPrettyName}</td>
+            <td>{parsedLogfile[fieldProperty]}</td>
+          </tr>
+        {/if}
+      {/each}
     </tbody>
   </table>
 </details>
 
 <small>Scroll/pinch to zoom, or shift+drag to select timespan</small>
 
-<LogChart chartId="rpm" label="RPM" logGroup={sortedLogGroups.rpm} />
-<LogChart
-  chartId="fuelFlow"
-  label="Fuel Flow"
-  logGroup={sortedLogGroups.fuelFlow}
-/>
-<LogChart
-  chartId="egt"
-  label="Exhaust Gas Temperature (EGT)"
-  logGroup={sortedLogGroups.egt}
-/>
-<LogChart
-  chartId="cht"
-  label="Cylinder Head Temperature (CHT)"
-  logGroup={sortedLogGroups.cht}
-/>
-<LogChart
-  chartId="oilTemp"
-  label="Oil Temperature"
-  logGroup={sortedLogGroups.oilTemp}
-/>
-<LogChart
-  chartId="oilPressure"
-  label="Oil Pressure"
-  logGroup={sortedLogGroups.oilPressure}
-/>
-<LogChart
-  chartId="electrical"
-  label="Electrical System"
-  logGroup={sortedLogGroups.electrical}
-/>
-<LogChart
-  chartId="fuelLevels"
-  label="Fuel Levels"
-  logGroup={sortedLogGroups.fuelLevels}
-/>
+{#each sortedLogGroups as sortedLogGroup}
+  <LogChart
+    logGroup={sortedLogGroup}
+    xLimits={parsedLogfile.calculated.limits.x}
+  />
+{/each}
