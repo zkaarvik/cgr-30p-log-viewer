@@ -1,36 +1,3 @@
-// ADDING NEW PREAMBLE FIELDS:
-// Add a field to LogFilePreambleFields, and the mapping to the log file string to KnownPreambleFields
-export interface LogFilePreambleFields {
-  ident?: string;
-  unitId?: string;
-  edcModels?: string;
-  softwareVersion?: string;
-  trackingNumber?: string;
-  localTime?: string;
-  zuluTime?: string;
-  flightNumber?: string;
-  engineHours?: string;
-  tachTime?: string;
-  dataLoggingInterval?: string;
-}
-
-// Map names from logfile to type
-export const KnownPreambleFields: {
-  [key: string]: keyof LogFilePreambleFields;
-} = {
-  "Aircraft ID": "ident",
-  "Unit ID": "unitId",
-  "EDC Models": "edcModels",
-  "SW Version": "softwareVersion",
-  "Tracking Number": "trackingNumber",
-  "Local Time": "localTime",
-  "Zulu Time": "zuluTime",
-  "Flight Number": "flightNumber",
-  "Engine Hours": "engineHours",
-  "Tach Time": "tachTime",
-  "Data Logging Interval": "dataLoggingInterval",
-};
-
 // ADDING NEW LOG GROUPS:
 // Define the new group in LogGroups, and the associated chart partameters in LogGroupInfo
 // Each group corresponds to one chart
@@ -147,8 +114,12 @@ export interface Dataset {
   data: { x: number; y: number }[];
 }
 
-export interface ParsedLogfile extends LogFilePreambleFields {
-  datasets?: Dataset[];
+export interface ParsedLogfile {
+  // Preamble is the file information before the CSV data
+  preamble: {
+    [key: string]: string;
+  };
+  datasets: Dataset[];
   // Calculated properties not directly from logfile
   calculated: {
     limits: {

@@ -8,7 +8,6 @@
   import LogChart from "./LogChart.svelte";
   import { sortLogGroups } from "$lib/cgr30Parse";
   import { base } from "$app/paths";
-  import { KnownPreambleFields } from "$lib/types";
 
   const { data }: PageProps = $props();
   const parsedLogfile = data.parsedLogfile;
@@ -31,13 +30,11 @@
   <summary style:width="100%">File Details</summary>
   <table>
     <tbody>
-      {#each Object.entries(KnownPreambleFields) as [fieldPrettyName, fieldProperty]}
-        {#if !!parsedLogfile[fieldProperty]}
-          <tr>
-            <td>{fieldPrettyName}</td>
-            <td>{parsedLogfile[fieldProperty]}</td>
-          </tr>
-        {/if}
+      {#each Object.entries(parsedLogfile.preamble) as [name, value]}
+        <tr>
+          <td>{name}</td>
+          <td>{value}</td>
+        </tr>
       {/each}
     </tbody>
   </table>

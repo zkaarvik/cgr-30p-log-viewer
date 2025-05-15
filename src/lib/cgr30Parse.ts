@@ -1,6 +1,5 @@
 import {
   KnownLogTypes,
-  KnownPreambleFields,
   LogGroups,
   type LogGroup,
   type ParsedLogfile,
@@ -36,6 +35,8 @@ export const parseLogfile = async (
   logfile: File
 ): Promise<ParsedLogfile | null> => {
   const parsedLogfile: ParsedLogfile = {
+    preamble: {},
+    datasets: [],
     calculated: { limits: { x: { min: 0, max: 0 } } },
   };
 
@@ -72,9 +73,7 @@ export const parseLogfile = async (
         const name = preambleLine[0].replace(/\./g, "");
         const value = preambleLine[1];
 
-        if (KnownPreambleFields[name]) {
-          parsedLogfile[KnownPreambleFields[name]] = value;
-        }
+        parsedLogfile.preamble[name] = value;
       }
       continue;
     }
@@ -93,14 +92,13 @@ export const parseLogfile = async (
     let csvLine = line.split(",");
     if (!parsedDatasetHeaders) {
       // First line.. parse headers
-      parsedLogfile.datasets = [];
       csvLine.forEach((header) =>
-        parsedLogfile.datasets?.push({ label: header, data: [] })
+        parsedLogfile.datasets.push({ label: header, data: [] })
       );
       parsedDatasetHeaders = true;
     } else {
       // CSV Data, same order as headers
-      if (csvLine.length !== parsedLogfile.datasets?.length) {
+      if (csvLine.length !== parsedLogfile.datasets.length) {
         console.error(
           "Data error: Number of headers doesn't equal number of data columns"
         );
@@ -109,7 +107,7 @@ export const parseLogfile = async (
       csvLine.forEach((datapoint, i) => {
         // TODO: Smart decode data depending on expected format. Fow now, assume everything is a number except first column
         // TODO: Better perf for converting string to num
-        parsedLogfile.datasets?.[i]?.data.push({ x: xValue, y: +datapoint });
+        parsedLogfile.datasets[i]?.data.push({ x: xValue, y: +datapoint });
       });
       xValue += xValueIncrement;
     }
