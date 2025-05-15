@@ -57,6 +57,7 @@ export enum LogGroups {
   oilPressure = "oilPressure",
   electrical = "electrical",
   fuelLevels = "fuelLevels",
+  otherTemps = "otherTemps",
 }
 
 export interface LogGroup {
@@ -99,6 +100,10 @@ export const LogGroupInfo: {
     title: "Fuel Levels",
     limits: { y: { min: 0, max: 25 } },
   },
+  [LogGroups.otherTemps]: {
+    title: "Other Temperatures",
+    limits: { y: { min: -20, max: 50 } },
+  },
 };
 
 export const KnownLogTypes: {
@@ -133,5 +138,18 @@ export const KnownLogTypes: {
   "FUEL R;GAL": {
     prettyLabel: "Right Tank (Gal)",
     group: LogGroups.fuelLevels,
+  },
+  "FLIGHT;GAL": {
+    prettyLabel: "Fuel Used (Gal)",
+    group: LogGroups.fuelLevels,
+  },
+
+  "CARB T;*C": {
+    prettyLabel: "Carb Temperature (°C)",
+    group: LogGroups.otherTemps,
+  },
+  "OAT;*C": {
+    prettyLabel: "Outside Air Temperature (°C)",
+    group: LogGroups.otherTemps,
   },
 };
