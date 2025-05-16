@@ -80,10 +80,13 @@ export const KnownLogTypes: {
 
   "OIL T;*F": {
     prettyLabel: "Oil Temperature (°F)",
-    group: LogGroups.oilPressure,
+    group: LogGroups.oilTemp,
   },
 
-  "OIL P;PSI": { prettyLabel: "Oil Pressure (PSI)", group: LogGroups.oilTemp },
+  "OIL P;PSI": {
+    prettyLabel: "Oil Pressure (PSI)",
+    group: LogGroups.oilPressure,
+  },
 
   "VOLTS;V": { prettyLabel: "Volts (V)", group: LogGroups.electrical },
   "AMPS;A": { prettyLabel: "Amps (A)", group: LogGroups.electrical },
