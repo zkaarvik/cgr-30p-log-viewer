@@ -4,12 +4,12 @@
 // Groups will be displayed in the order defined here
 export enum LogGroups {
   rpm = "rpm",
-  fuelFlow = "fuelFlow",
   egt = "egt",
   cht = "cht",
   oilTemp = "oilTemp",
   oilPressure = "oilPressure",
   electrical = "electrical",
+  fuelFlow = "fuelFlow",
   fuelLevels = "fuelLevels",
   otherTemps = "otherTemps",
 }
