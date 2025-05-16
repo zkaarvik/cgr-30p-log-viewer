@@ -24,10 +24,6 @@ export const LogGroupInfo: {
     title: "RPM",
     limits: { y: { min: 0, max: 3000 } },
   },
-  [LogGroups.fuelFlow]: {
-    title: "Fuel Flow",
-    limits: { y: { min: 0, max: 20 } },
-  },
   [LogGroups.egt]: {
     title: "Exhaust Gas Temperature (EGT)",
     limits: { y: { min: 0, max: 2000 } },
@@ -47,6 +43,10 @@ export const LogGroupInfo: {
   [LogGroups.electrical]: {
     title: "Electrical System",
     limits: { y: { min: 0, max: 15 } },
+  },
+  [LogGroups.fuelFlow]: {
+    title: "Fuel Flow",
+    limits: { y: { min: 0, max: 20 } },
   },
   [LogGroups.fuelLevels]: {
     title: "Fuel Levels",
