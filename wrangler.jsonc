@@ -5,5 +5,11 @@
   "assets": {
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "gefc.kaarvik.com",
+      "custom_domain": true
+    }
+  ]
 }
