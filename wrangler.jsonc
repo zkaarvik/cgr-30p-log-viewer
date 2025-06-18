@@ -11,5 +11,11 @@
       "pattern": "gefc.kaarvik.com",
       "custom_domain": true
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "gefc_logs",
+      "bucket_name": "gefc-logs"
+    }
   ]
 }
