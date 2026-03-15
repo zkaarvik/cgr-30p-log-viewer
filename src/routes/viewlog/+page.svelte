@@ -40,6 +40,21 @@
   </aside>
 
   <main class="content-column">
+    <section class="aircraft-card">
+      <div class="aircraft-block">
+        <div class="aircraft-label">Aircraft ID</div>
+        <div class="aircraft-id">
+          {parsedLogfile.preamble["Aircraft ID"] ?? "Unknown"}
+        </div>
+      </div>
+      <div class="aircraft-block">
+        <div class="aircraft-label">Flight Date</div>
+        <div class="aircraft-id">
+          {parsedLogfile.preamble["Local Time"] ?? "Unknown"}
+        </div>
+      </div>
+    </section>
+
     <details class="details">
       <summary>File Details</summary>
       <table class="details-table">
@@ -72,6 +87,39 @@
     border-radius: 14px;
     padding: 12px 16px;
     box-shadow: var(--shadow);
+  }
+
+  .aircraft-card {
+    background: linear-gradient(135deg, rgba(16, 24, 38, 0.08), transparent);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+
+  .aircraft-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .aircraft-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  .aircraft-id {
+    margin-top: 6px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text);
   }
 
   summary {
