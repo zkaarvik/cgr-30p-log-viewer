@@ -47,6 +47,15 @@ export const parseLogfile = async (
   let xValue = 0;
   let xValueInitial = 0;
   let xValueIncrement = 1;
+  let timeColumnIndex = -1;
+  let timeMode: "local" | "utc" | "unknown" = "unknown";
+  let currentDateParts:
+    | { year: number; month: number; day: number }
+    | null = null;
+  let lastTimeSeconds: number | null = null;
+  let sameSecondCount = 0;
+  let localPreamble: ReturnType<typeof parsePreambleDateTime> | null = null;
+  let zuluPreamble: ReturnType<typeof parsePreambleDateTime> | null = null;
   for await (let line of logfileIterator(logfile)) {
     //First, validate. The first line should be what we expecte, otherwise abort
     if (!isValid) {
@@ -80,12 +89,23 @@ export const parseLogfile = async (
 
     // Set up starting time point. Measure in unix timestamps
     if (parsedPreamble && !parsedDatasetHeaders) {
-      // Date is formatted as "2025/03/30 21:52:53 ", parse into something accepted by all browsers
-      const formattedDate = parsedLogfile.preamble["Zulu Time"]
+      localPreamble = parsePreambleDateTime(
+        parsedLogfile.preamble["Local Time"]
+      );
+      zuluPreamble = parsePreambleDateTime(parsedLogfile.preamble["Zulu Time"]);
+
+      // Fallback: if we can't parse TIME values per-row, advance by logging interval
+      const formattedLocalDate = parsedLogfile.preamble["Local Time"]
         ?.replaceAll("/", "-")
         .trim();
-      xValue = new Date(`${formattedDate ?? 0}Z`).getTime();
-      xValueInitial = xValue;
+      const formattedZuluDate = parsedLogfile.preamble["Zulu Time"]
+        ?.replaceAll("/", "-")
+        .trim();
+      if (formattedLocalDate) {
+        xValue = new Date(formattedLocalDate).getTime();
+      } else {
+        xValue = new Date(`${formattedZuluDate ?? 0}Z`).getTime();
+      }
       xValueIncrement =
         1000 *
         parseFloat(parsedLogfile.preamble["Data Logging Interval"] ?? "1");
@@ -95,9 +115,13 @@ export const parseLogfile = async (
     let csvLine = line.split(",");
     if (!parsedDatasetHeaders) {
       // First line.. parse headers
-      csvLine.forEach((header) =>
-        parsedLogfile.datasets.push({ label: header, data: [] })
-      );
+      csvLine.forEach((header, index) => {
+        const normalized = header.trim();
+        if (normalized === "TIME") {
+          timeColumnIndex = index;
+        }
+        parsedLogfile.datasets.push({ label: header, data: [] });
+      });
       parsedDatasetHeaders = true;
     } else {
       // CSV Data, same order as headers
@@ -107,12 +131,106 @@ export const parseLogfile = async (
         );
       }
 
+      const timeValueRaw =
+        timeColumnIndex >= 0 ? csvLine[timeColumnIndex]?.trim() : null;
+      const timeSeconds = timeValueRaw
+        ? parseTimeToSeconds(timeValueRaw)
+        : null;
+
+      if (timeSeconds !== null) {
+        if (timeMode === "unknown") {
+          const localSeconds = localPreamble?.timeSeconds ?? null;
+          const zuluSeconds = zuluPreamble?.timeSeconds ?? null;
+
+          if (localPreamble) {
+            // Default to local time when available
+            timeMode = "local";
+          } else if (zuluPreamble) {
+            timeMode = "utc";
+          } else if (localSeconds !== null && timeSeconds === localSeconds) {
+            timeMode = "local";
+          } else if (zuluSeconds !== null && timeSeconds === zuluSeconds) {
+            timeMode = "utc";
+          }
+
+          if (timeMode === "local" && localPreamble) {
+            currentDateParts = { ...localPreamble.date };
+          } else if (timeMode === "utc" && zuluPreamble) {
+            currentDateParts = { ...zuluPreamble.date };
+          }
+        }
+
+        if (currentDateParts) {
+          if (
+            lastTimeSeconds !== null &&
+            timeSeconds + 60 < lastTimeSeconds
+          ) {
+            // Clock wrapped past midnight
+            const rollover = new Date(
+              currentDateParts.year,
+              currentDateParts.month - 1,
+              currentDateParts.day
+            );
+            rollover.setDate(rollover.getDate() + 1);
+            currentDateParts = {
+              year: rollover.getFullYear(),
+              month: rollover.getMonth() + 1,
+              day: rollover.getDate(),
+            };
+            sameSecondCount = 0;
+          }
+
+          if (lastTimeSeconds !== null && timeSeconds === lastTimeSeconds) {
+            sameSecondCount += 1;
+          } else {
+            sameSecondCount = 0;
+          }
+
+          const [h, m, s] = secondsToHms(timeSeconds);
+          const baseTimeMs =
+            timeMode === "utc"
+              ? Date.UTC(
+                  currentDateParts.year,
+                  currentDateParts.month - 1,
+                  currentDateParts.day,
+                  h,
+                  m,
+                  s
+                )
+              : new Date(
+                  currentDateParts.year,
+                  currentDateParts.month - 1,
+                  currentDateParts.day,
+                  h,
+                  m,
+                  s
+                ).getTime();
+          const subSecondOffsetMs = sameSecondCount * xValueIncrement;
+          xValue = baseTimeMs + subSecondOffsetMs;
+
+          if (xValueInitial === 0) {
+            xValueInitial = xValue;
+          }
+          lastTimeSeconds = timeSeconds;
+        }
+      }
+
+      if (timeSeconds === null || !currentDateParts) {
+        // Fallback to interval-based timing
+        if (xValueInitial === 0) {
+          xValueInitial = xValue;
+        }
+      }
+
       csvLine.forEach((datapoint, i) => {
         // TODO: Smart decode data depending on expected format. Fow now, assume everything is a number except first column
         // TODO: Better perf for converting string to num
         parsedLogfile.datasets[i]?.data.push({ x: xValue, y: +datapoint });
       });
-      xValue += xValueIncrement;
+
+      if (timeSeconds === null || !currentDateParts) {
+        xValue += xValueIncrement;
+      }
     }
   }
 
@@ -129,6 +247,51 @@ export const parseLogfile = async (
   };
 
   return parsedLogfile;
+};
+
+const parsePreambleDateTime = (value?: string) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const match =
+    /^(\d{4})[/-](\d{2})[/-](\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})$/.exec(
+      trimmed
+    );
+  if (!match) return null;
+  const [, year, month, day, hour, minute, second] = match;
+  const timeSeconds =
+    Number(hour) * 3600 + Number(minute) * 60 + Number(second);
+  return {
+    date: {
+      year: Number(year),
+      month: Number(month),
+      day: Number(day),
+    },
+    timeSeconds,
+  };
+};
+
+const parseTimeToSeconds = (value: string) => {
+  const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(value.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const seconds = Number(match[3] ?? "0");
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    Number.isNaN(seconds)
+  ) {
+    return null;
+  }
+  return hours * 3600 + minutes * 60 + seconds;
+};
+
+const secondsToHms = (totalSeconds: number) => {
+  const safe = Math.max(0, totalSeconds);
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  return [hours, minutes, seconds] as const;
 };
 
 const FUEL_LEFT_LABEL = "FUEL L;GAL";
