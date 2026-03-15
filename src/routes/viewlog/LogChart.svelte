@@ -88,7 +88,50 @@
   });
 </script>
 
-<div>
-  <h3>{LogGroupInfo[logGroup.group].title}</h3>
-  <canvas id={chartId}></canvas>
-</div>
+<section class="chart-card">
+  <div class="chart-header">
+    <h3>{LogGroupInfo[logGroup.group].title}</h3>
+    <span class="chart-meta">{logGroup.datasets.length} series</span>
+  </div>
+  <canvas class="chart-canvas" id={chartId}></canvas>
+</section>
+
+<style>
+  .chart-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 16px 18px 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .chart-meta {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .chart-canvas {
+    width: 100%;
+    height: 280px;
+  }
+
+  @media (max-width: 720px) {
+    .chart-canvas {
+      height: 220px;
+    }
+  }
+</style>
