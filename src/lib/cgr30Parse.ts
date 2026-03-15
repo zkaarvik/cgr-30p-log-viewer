@@ -116,6 +116,8 @@ export const parseLogfile = async (
     }
   }
 
+  addDerivedFuelSeries(parsedLogfile);
+
   //Calculated properties
   parsedLogfile.calculated = {
     limits: {
@@ -127,6 +129,47 @@ export const parseLogfile = async (
   };
 
   return parsedLogfile;
+};
+
+const FUEL_LEFT_LABEL = "FUEL L;GAL";
+const FUEL_RIGHT_LABEL = "FUEL R;GAL";
+const FUEL_TOTAL_LABEL = "FUEL TOTAL;GAL";
+const FUEL_BAL_LABEL = "FUEL BAL;GAL";
+
+const addDerivedFuelSeries = (parsedLogfile: ParsedLogfile) => {
+  const left = parsedLogfile.datasets.find(
+    (dataset) => dataset.label === FUEL_LEFT_LABEL
+  );
+  const right = parsedLogfile.datasets.find(
+    (dataset) => dataset.label === FUEL_RIGHT_LABEL
+  );
+
+  if (!left || !right) return;
+
+  const length = Math.min(left.data.length, right.data.length);
+  const totalData = [];
+  const balanceData = [];
+
+  for (let i = 0; i < length; i += 1) {
+    const leftPoint = left.data[i];
+    const rightPoint = right.data[i];
+    const leftValue = leftPoint?.y ?? Number.NaN;
+    const rightValue = rightPoint?.y ?? Number.NaN;
+
+    totalData.push({
+      x: leftPoint?.x ?? rightPoint?.x ?? 0,
+      y: leftValue + rightValue,
+    });
+    balanceData.push({
+      x: leftPoint?.x ?? rightPoint?.x ?? 0,
+      y: leftValue - rightValue,
+    });
+  }
+
+  parsedLogfile.datasets.push(
+    { label: FUEL_TOTAL_LABEL, data: totalData },
+    { label: FUEL_BAL_LABEL, data: balanceData }
+  );
 };
 
 async function* logfileIterator(logfile: File) {

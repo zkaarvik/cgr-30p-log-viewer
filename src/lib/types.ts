@@ -105,9 +105,22 @@ export const KnownLogTypes: {
     prettyLabel: "Carb Temperature (°C)",
     group: LogGroups.otherTemps,
   },
+  "CARB T;*F": {
+    prettyLabel: "Carb Temperature (°F)",
+    group: LogGroups.otherTemps,
+  },
   "OAT;*C": {
     prettyLabel: "Outside Air Temperature (°C)",
     group: LogGroups.otherTemps,
+  },
+
+  "FUEL TOTAL;GAL": {
+    prettyLabel: "Total Fuel (Gal)",
+    group: LogGroups.fuelLevels,
+  },
+  "FUEL BAL;GAL": {
+    prettyLabel: "Fuel Balance L-R (Gal)",
+    group: LogGroups.fuelLevels,
   },
 };
 
