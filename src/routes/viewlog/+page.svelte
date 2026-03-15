@@ -8,6 +8,7 @@
   import LogChart from "./LogChart.svelte";
   import { sortLogGroups } from "$lib/cgr30Parse";
   import { base } from "$app/paths";
+  import { LogGroupInfo } from "$lib/types";
 
   const { data }: PageProps = $props();
   const parsedLogfile = data.parsedLogfile;
@@ -26,28 +27,43 @@
   const sortedLogGroups = sortLogGroups(parsedLogfile);
 </script>
 
-<details class="details">
-  <summary>File Details</summary>
-  <table class="details-table">
-    <tbody>
-      {#each Object.entries(parsedLogfile.preamble) as [name, value]}
-        <tr>
-          <td>{name}</td>
-          <td>{value}</td>
-        </tr>
+<div class="viewlog-layout">
+  <aside class="nav-column">
+    <div class="nav-title">Charts</div>
+    <nav class="nav-list">
+      {#each sortedLogGroups as sortedLogGroup}
+        <a href={`#section-${sortedLogGroup.group}`}>
+          {LogGroupInfo[sortedLogGroup.group].title}
+        </a>
       {/each}
-    </tbody>
-  </table>
-</details>
+    </nav>
+  </aside>
 
-<p class="hint">Scroll or pinch to zoom. Shift + drag to select a timespan.</p>
+  <main class="content-column">
+    <details class="details">
+      <summary>File Details</summary>
+      <table class="details-table">
+        <tbody>
+          {#each Object.entries(parsedLogfile.preamble) as [name, value]}
+            <tr>
+              <td>{name}</td>
+              <td>{value}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </details>
 
-{#each sortedLogGroups as sortedLogGroup}
-  <LogChart
-    logGroup={sortedLogGroup}
-    xLimits={parsedLogfile.calculated.limits.x}
-  />
-{/each}
+    <p class="hint">Scroll or pinch to zoom. Shift + drag to select a timespan.</p>
+
+    {#each sortedLogGroups as sortedLogGroup}
+      <LogChart
+        logGroup={sortedLogGroup}
+        xLimits={parsedLogfile.calculated.limits.x}
+      />
+    {/each}
+  </main>
+</div>
 
 <style>
   .details {
@@ -84,5 +100,74 @@
     margin: 0;
     font-size: 13px;
     color: var(--muted);
+  }
+
+  .viewlog-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .nav-column {
+    position: sticky;
+    top: 18px;
+    align-self: start;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .nav-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-list a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1.3;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: rgba(16, 24, 38, 0.04);
+    border: 1px solid transparent;
+    transition: border-color 120ms ease, background 120ms ease,
+      transform 120ms ease;
+  }
+
+  .nav-list a:hover {
+    border-color: var(--panel-border);
+    background: rgba(16, 24, 38, 0.08);
+    transform: translateX(2px);
+  }
+
+  .content-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  @media (max-width: 960px) {
+    .viewlog-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .nav-column {
+      position: static;
+      top: auto;
+    }
   }
 </style>
