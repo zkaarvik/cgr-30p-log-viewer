@@ -3,7 +3,7 @@
   import { error } from "@sveltejs/kit";
   import { Chart } from "chart.js/auto";
   import zoomPlugin from "chartjs-plugin-zoom";
-  import "chartjs-adapter-spacetime";
+  import "chartjs-adapter-luxon";
   import type { PageProps } from "./$types";
   import LogChart from "./LogChart.svelte";
   import { sortLogGroups } from "$lib/cgr30Parse";
@@ -23,6 +23,10 @@
   // remove /auto from import and set it up here
   // Chart.register(BarController, BarElement, LineController, LineElement, PointElement, LinearScale, Tooltip);
   Chart.register(zoomPlugin);
+  Chart.defaults.adapters ??= {};
+  Chart.defaults.adapters.date = {
+    zone: "local",
+  };
 
   const sortedLogGroups = sortLogGroups(parsedLogfile);
 </script>
@@ -149,6 +153,7 @@
     font-size: 13px;
     color: var(--muted);
   }
+
 
   .viewlog-layout {
     display: grid;

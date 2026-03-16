@@ -1,6 +1,7 @@
 <script lang="ts">
   import { KnownLogTypes, LogGroupInfo, type LogGroup } from "$lib/types";
   import { Chart } from "chart.js";
+  import "chartjs-adapter-luxon";
 
   interface Props {
     logGroup: LogGroup;
@@ -9,6 +10,7 @@
 
   let { logGroup, xLimits }: Props = $props();
   const chartId = logGroup.group;
+  let chartInstance: Chart | null = null;
   const prettyLabelDatasets = logGroup.datasets.map((dataset) => ({
     label: KnownLogTypes[dataset.label]?.prettyLabel ?? dataset.label,
     data: dataset.data,
@@ -19,7 +21,11 @@
     const ctx = document.getElementById(chartId) as HTMLCanvasElement;
     if (!ctx || !logGroup || !logGroup.datasets?.length) return;
 
-    new Chart(ctx, {
+    if (chartInstance) {
+      return;
+    }
+
+    chartInstance = new Chart(ctx, {
       type: "line",
       options: {
         normalized: true,
@@ -85,6 +91,11 @@
         datasets: prettyLabelDatasets,
       },
     });
+
+    return () => {
+      chartInstance?.destroy();
+      chartInstance = null;
+    };
   });
 </script>
 
