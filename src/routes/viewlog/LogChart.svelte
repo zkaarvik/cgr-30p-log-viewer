@@ -99,7 +99,7 @@
   });
 </script>
 
-<section class="chart-card" id={`section-${chartId}`}>
+<section class="chart-card" id={`section-${chartId}`} data-group={chartId}>
   <div class="chart-header">
     <h3>{LogGroupInfo[logGroup.group].title}</h3>
     <span class="chart-meta">{logGroup.datasets.length} series</span>

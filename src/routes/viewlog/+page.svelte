@@ -4,6 +4,7 @@
   import { Chart } from "chart.js/auto";
   import zoomPlugin from "chartjs-plugin-zoom";
   import "chartjs-adapter-luxon";
+  import { scrollSpy } from "$lib/actions/scrollSpy";
   import type { PageProps } from "./$types";
   import LogChart from "./LogChart.svelte";
   import { sortLogGroups } from "$lib/cgr30Parse";
@@ -29,6 +30,7 @@
   };
 
   const sortedLogGroups = sortLogGroups(parsedLogfile);
+  let activeGroup = $state<string | null>(sortedLogGroups[0]?.group ?? null);
 </script>
 
 <div class="viewlog-layout">
@@ -36,14 +38,23 @@
     <div class="nav-title">Charts</div>
     <nav class="nav-list">
       {#each sortedLogGroups as sortedLogGroup}
-        <a href={`#section-${sortedLogGroup.group}`}>
+        <a
+          href={`#section-${sortedLogGroup.group}`}
+          class:active={activeGroup === sortedLogGroup.group}
+        >
           {LogGroupInfo[sortedLogGroup.group].title}
         </a>
       {/each}
     </nav>
   </aside>
 
-  <main class="content-column">
+  <main
+    class="content-column"
+    use:scrollSpy={{
+      targets: ".chart-card[data-group]",
+      onChange: (group) => (activeGroup = group),
+    }}
+  >
     <section class="aircraft-card">
       <div class="aircraft-block">
         <div class="aircraft-label">Aircraft ID</div>
@@ -204,6 +215,13 @@
     border-color: var(--panel-border);
     background: rgba(16, 24, 38, 0.08);
     transform: translateX(2px);
+  }
+
+  .nav-list a.active {
+    background: rgba(27, 98, 230, 0.12);
+    border-color: rgba(27, 98, 230, 0.3);
+    color: #1b62e6;
+    font-weight: 600;
   }
 
   .content-column {
