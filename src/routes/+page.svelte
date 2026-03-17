@@ -1,37 +1,52 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { base } from "$app/paths";
-  import { fileStore } from "$lib/stores/fileStore";
+  import { flightStore, selectedFlightId } from "$lib/stores/flightStore";
+  import { buildFlightGroups } from "$lib/flightUtils";
 
   const onSubmitLogfile = async (event: Event) => {
     const target = event?.target as HTMLInputElement;
-    const logfile = target.files?.[0];
+    const files = Array.from(target.files ?? []);
 
-    fileStore.set(logfile ?? null);
-    goto(`${base}/viewlog`);
+    const flights = await buildFlightGroups(files);
+    flightStore.set(flights);
+    selectedFlightId.set(null);
+    goto(`${base}/flights`);
   };
 </script>
 
 <section class="hero">
   <div class="hero-copy">
-    <h2>Upload a CGR-30P log</h2>
+    <h2>Upload CGR-30P logs</h2>
     <p>
-      Drag in a CSV and review engine, electrical, and performance traces with
-      quick zoom and pan.
+      Upload a folder of CSVs to group flights automatically. Review engine,
+      electrical, and performance traces with quick zoom and pan.
     </p>
   </div>
 
   <div class="card">
-    <label class="field-label" for="logfile">Log file (CSV)</label>
+    <label class="field-label" for="logfiles">Log files (CSV)</label>
     <input
       class="file-input"
       type="file"
-      id="logfile"
-      name="logfile"
-      accept="text/csv"
+      id="logfiles"
+      name="logfiles"
+      accept=".csv,text/csv"
+      multiple
       onchange={onSubmitLogfile}
     />
-    <p class="hint">Accepted format: text/csv. Files stay in your browser.</p>
+    <label class="field-label" for="logfolder">Or choose a folder</label>
+    <input
+      class="file-input"
+      type="file"
+      id="logfolder"
+      name="logfolder"
+      accept=".csv,text/csv"
+      multiple
+      webkitdirectory
+      onchange={onSubmitLogfile}
+    />
+    <p class="hint">Accepted format: .csv files. Files stay in your browser.</p>
   </div>
 </section>
 

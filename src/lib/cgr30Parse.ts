@@ -8,6 +8,20 @@ import {
 const FIRST_LINE_VALIDATION = "Electronics International Inc";
 const CSV_HEADER_PREFIX = "TIME,";
 
+export interface ParseLogfileOptions {
+  headerOverride?: string[];
+  preambleOverride?: ParsedLogfile["preamble"];
+  allowMissingValidation?: boolean;
+}
+
+export interface LogfileMetadata {
+  preamble: ParsedLogfile["preamble"];
+  header: string[] | null;
+  hasPreamble: boolean;
+  hasHeader: boolean;
+  isValid: boolean;
+}
+
 // Parse a CGR-30P log file. General Format as follows:
 /*
 Electronics International Inc
@@ -32,10 +46,11 @@ TIME, RPML, RPMR, RPM, MP, EGT1, EGT1;*F, EGT2;*F
 17:06:26, 2140, 2140, 2140, 22.5, 1354, 1292, 1375
 */
 export const parseLogfile = async (
-  logfile: File
+  logfile: File,
+  options: ParseLogfileOptions = {}
 ): Promise<ParsedLogfile | null> => {
   const parsedLogfile: ParsedLogfile = {
-    preamble: {},
+    preamble: { ...(options.preambleOverride ?? {}) },
     datasets: [],
     calculated: { limits: { x: { min: 0, max: 0 } } },
   };
@@ -56,10 +71,55 @@ export const parseLogfile = async (
   let sameSecondCount = 0;
   let localPreamble: ReturnType<typeof parsePreambleDateTime> | null = null;
   let zuluPreamble: ReturnType<typeof parsePreambleDateTime> | null = null;
+
+  const initTimingFromPreamble = () => {
+    localPreamble = parsePreambleDateTime(parsedLogfile.preamble["Local Time"]);
+    zuluPreamble = parsePreambleDateTime(parsedLogfile.preamble["Zulu Time"]);
+
+    // Fallback: if we can't parse TIME values per-row, advance by logging interval
+    const formattedLocalDate = parsedLogfile.preamble["Local Time"]
+      ?.replaceAll("/", "-")
+      .trim();
+    const formattedZuluDate = parsedLogfile.preamble["Zulu Time"]
+      ?.replaceAll("/", "-")
+      .trim();
+    if (formattedLocalDate) {
+      xValue = new Date(formattedLocalDate).getTime();
+    } else if (formattedZuluDate) {
+      xValue = new Date(`${formattedZuluDate}Z`).getTime();
+    } else {
+      xValue = 0;
+    }
+    xValueIncrement =
+      1000 *
+      parseFloat(parsedLogfile.preamble["Data Logging Interval"] ?? "1");
+  };
+
+  if (options.headerOverride?.length) {
+    parsedPreamble = true;
+    parsedDatasetHeaders = true;
+    options.headerOverride.forEach((header, index) => {
+      const normalized = header.trim();
+      if (normalized === "TIME") {
+        timeColumnIndex = index;
+      }
+      parsedLogfile.datasets.push({ label: header, data: [] });
+    });
+    initTimingFromPreamble();
+  }
   for await (let line of logfileIterator(logfile)) {
     //First, validate. The first line should be what we expecte, otherwise abort
     if (!isValid) {
       if (line === FIRST_LINE_VALIDATION) {
+        isValid = true;
+        continue;
+      }
+      if (
+        options.allowMissingValidation &&
+        line.indexOf(CSV_HEADER_PREFIX) === 0
+      ) {
+        isValid = true;
+      } else if (options.allowMissingValidation && options.headerOverride) {
         isValid = true;
       } else {
         // TODO: Handle error better than just returning null;
@@ -89,26 +149,7 @@ export const parseLogfile = async (
 
     // Set up starting time point. Measure in unix timestamps
     if (parsedPreamble && !parsedDatasetHeaders) {
-      localPreamble = parsePreambleDateTime(
-        parsedLogfile.preamble["Local Time"]
-      );
-      zuluPreamble = parsePreambleDateTime(parsedLogfile.preamble["Zulu Time"]);
-
-      // Fallback: if we can't parse TIME values per-row, advance by logging interval
-      const formattedLocalDate = parsedLogfile.preamble["Local Time"]
-        ?.replaceAll("/", "-")
-        .trim();
-      const formattedZuluDate = parsedLogfile.preamble["Zulu Time"]
-        ?.replaceAll("/", "-")
-        .trim();
-      if (formattedLocalDate) {
-        xValue = new Date(formattedLocalDate).getTime();
-      } else {
-        xValue = new Date(`${formattedZuluDate ?? 0}Z`).getTime();
-      }
-      xValueIncrement =
-        1000 *
-        parseFloat(parsedLogfile.preamble["Data Logging Interval"] ?? "1");
+      initTimingFromPreamble();
     }
 
     // CSV Data
@@ -367,6 +408,123 @@ async function* logfileIterator(logfile: File) {
     yield decodedChunk.substring(startIndex);
   }
 }
+
+export const parseLogfileMetadata = async (
+  logfile: File
+): Promise<LogfileMetadata> => {
+  const metadata: LogfileMetadata = {
+    preamble: {},
+    header: null,
+    hasPreamble: false,
+    hasHeader: false,
+    isValid: false,
+  };
+
+  let sawValidation = false;
+  let firstLine = true;
+
+  for await (let line of logfileIterator(logfile)) {
+    if (firstLine) {
+      firstLine = false;
+      if (line === FIRST_LINE_VALIDATION) {
+        sawValidation = true;
+        metadata.isValid = true;
+        continue;
+      }
+
+      if (line.indexOf(CSV_HEADER_PREFIX) === 0) {
+        metadata.isValid = true;
+        metadata.hasHeader = true;
+        metadata.header = line.split(",");
+        return metadata;
+      }
+
+      // Data-only file without validation/preamble
+      metadata.isValid = false;
+      return metadata;
+    }
+
+    if (sawValidation && line.indexOf(CSV_HEADER_PREFIX) === 0) {
+      metadata.hasHeader = true;
+      metadata.header = line.split(",");
+      return metadata;
+    }
+
+    if (sawValidation) {
+      const preambleLine = line.split(": ");
+      if (preambleLine.length === 2) {
+        const name = preambleLine[0].replace(/\./g, "");
+        const value = preambleLine[1];
+        metadata.preamble[name] = value;
+        metadata.hasPreamble = true;
+      }
+    }
+  }
+
+  return metadata;
+};
+
+export const mergeParsedLogfiles = (
+  parts: ParsedLogfile[]
+): ParsedLogfile | null => {
+  const filtered = parts.filter(Boolean);
+  if (!filtered.length) return null;
+
+  const merged: ParsedLogfile = {
+    preamble: {},
+    datasets: [],
+    calculated: { limits: { x: { min: Infinity, max: -Infinity } } },
+  };
+
+  for (const part of filtered) {
+    for (const [key, value] of Object.entries(part.preamble)) {
+      if (!merged.preamble[key] && value) {
+        merged.preamble[key] = value;
+      }
+    }
+  }
+
+  const datasetMap = new Map<string, { x: number; y: number }[]>();
+
+  for (const part of filtered) {
+    for (const dataset of part.datasets) {
+      if (dataset.label === FUEL_TOTAL_LABEL || dataset.label === FUEL_BAL_LABEL) {
+        continue;
+      }
+      const existing = datasetMap.get(dataset.label);
+      if (existing) {
+        existing.push(...dataset.data);
+      } else {
+        datasetMap.set(dataset.label, [...dataset.data]);
+      }
+    }
+
+    merged.calculated.limits.x.min = Math.min(
+      merged.calculated.limits.x.min,
+      part.calculated.limits.x.min
+    );
+    merged.calculated.limits.x.max = Math.max(
+      merged.calculated.limits.x.max,
+      part.calculated.limits.x.max
+    );
+  }
+
+  for (const [label, data] of datasetMap.entries()) {
+    data.sort((a, b) => a.x - b.x);
+    merged.datasets.push({ label, data });
+  }
+
+  addDerivedFuelSeries(merged);
+
+  if (!Number.isFinite(merged.calculated.limits.x.min)) {
+    merged.calculated.limits.x.min = 0;
+  }
+  if (!Number.isFinite(merged.calculated.limits.x.max)) {
+    merged.calculated.limits.x.max = 0;
+  }
+
+  return merged;
+};
 
 // Arrange parsed log groups into an expected order
 export const sortLogGroups = (parsedLogfile: ParsedLogfile): LogGroup[] => {

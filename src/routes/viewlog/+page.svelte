@@ -12,11 +12,11 @@
 
   const { data }: PageProps = $props();
   const parsedLogfile = data.parsedLogfile;
+  const flight = data.flight;
 
-  if (!parsedLogfile) {
-    // For now just go back to home
-    goto(`${base}/`);
-    error(404, "No file provided");
+  if (!parsedLogfile || !flight) {
+    goto(`${base}/flights`);
+    error(404, "No flight provided");
   }
 
   // LATER: Prepare chart lib and with only used
@@ -33,6 +33,9 @@
 
 <div class="viewlog-layout">
   <aside class="nav-column">
+    <button class="back-button" on:click={() => goto(`${base}/flights`)}>
+      Back to flights
+    </button>
     <div class="nav-title">Charts</div>
     <nav class="nav-list">
       {#each sortedLogGroups as sortedLogGroup}
@@ -52,9 +55,17 @@
         </div>
       </div>
       <div class="aircraft-block">
+        <div class="aircraft-label">Flight Number</div>
+        <div class="aircraft-id">
+          {parsedLogfile.preamble["Flight Number"] ?? flight.flightNumber}
+        </div>
+      </div>
+      <div class="aircraft-block">
         <div class="aircraft-label">Flight Date</div>
         <div class="aircraft-id">
-          {parsedLogfile.preamble["Local Time"] ?? "Unknown"}
+          {parsedLogfile.preamble["Local Time"] ??
+            parsedLogfile.preamble["Flight Date"] ??
+            flight.flightDate}
         </div>
       </div>
     </section>
@@ -171,6 +182,21 @@
     border-radius: 16px;
     padding: 16px;
     box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .back-button {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f4ed8;
+    background: rgba(31, 111, 235, 0.12);
+    cursor: pointer;
+    text-align: left;
   }
 
   .nav-title {
