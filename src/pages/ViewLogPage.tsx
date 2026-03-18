@@ -89,33 +89,37 @@ const ViewLogPage = () => {
 
       <main className="content-column">
         <section className="aircraft-card">
-          <div className="aircraft-block">
-            <div className="aircraft-label">Aircraft ID</div>
-            <div className="aircraft-id">
-              {parsedLogfile.preamble["Aircraft ID"] ?? "Unknown"}
+          <div className="aircraft-header">
+            <div className="aircraft-block">
+              <div className="aircraft-label">Aircraft ID</div>
+              <div className="aircraft-id">
+                {parsedLogfile.preamble["Aircraft ID"] ?? "Unknown"}
+              </div>
+            </div>
+            <div className="aircraft-block">
+              <div className="aircraft-label">Flight Date</div>
+              <div className="aircraft-id">
+                {parsedLogfile.preamble["Local Time"] ?? "Unknown"}
+              </div>
             </div>
           </div>
-          <div className="aircraft-block">
-            <div className="aircraft-label">Flight Date</div>
-            <div className="aircraft-id">
-              {parsedLogfile.preamble["Local Time"] ?? "Unknown"}
-            </div>
-          </div>
+          <details className="details aircraft-details">
+            <summary>
+              <span>File Details</span>
+              <span className="details-meta">Tap to expand</span>
+            </summary>
+            <table className="details-table">
+              <tbody>
+                {Object.entries(parsedLogfile.preamble).map(([name, value]) => (
+                  <tr key={name}>
+                    <td>{name}</td>
+                    <td>{value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
         </section>
-
-        <details className="details">
-          <summary>File Details</summary>
-          <table className="details-table">
-            <tbody>
-              {Object.entries(parsedLogfile.preamble).map(([name, value]) => (
-                <tr key={name}>
-                  <td>{name}</td>
-                  <td>{value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </details>
 
         <p className="hint">
           Scroll or pinch to zoom. Shift + drag to select a timespan.

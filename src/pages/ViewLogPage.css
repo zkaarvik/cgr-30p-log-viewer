@@ -12,16 +12,50 @@
   border-radius: 18px;
   padding: 18px 20px;
   box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+}
+
+.aircraft-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+      280px 140px at 10% 10%,
+      rgba(31, 111, 235, 0.12),
+      transparent 60%
+    ),
+    radial-gradient(
+      240px 160px at 90% 0%,
+      rgba(79, 209, 197, 0.12),
+      transparent 60%
+    );
+  pointer-events: none;
+}
+
+.aircraft-header {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   align-items: start;
+  padding: 2px;
 }
 
 .aircraft-block {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(16, 24, 38, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
 }
 
 .aircraft-label {
@@ -44,11 +78,65 @@ summary {
   font-weight: 500;
 }
 
+.aircraft-details {
+  grid-column: 1 / -1;
+  margin: 4px -20px -18px;
+  padding: 8px 20px 8px;
+  background: #f8faff;
+  border: none;
+  border-top: 1px solid rgba(16, 24, 38, 0.12);
+  border-radius: 0 0 18px 18px;
+  box-shadow: none;
+  position: relative;
+  z-index: 1;
+}
+
+.aircraft-details[open] {
+  padding: 8px 20px 14px;
+}
+
+.aircraft-details > summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.details-meta {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.aircraft-details > summary::marker {
+  color: var(--muted);
+}
+
+.aircraft-details > summary::before {
+  content: "▾";
+  font-size: 16px;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.aircraft-details[open] > summary::before {
+  transform: rotate(180deg);
+}
+
 .details-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
   font-size: 13px;
+}
+
+.aircraft-details:not([open]) .details-table {
+  margin-top: 0;
 }
 
 .details-table td {
